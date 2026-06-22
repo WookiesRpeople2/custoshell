@@ -1,0 +1,21 @@
+use constants::{PROMPT_SECTION, PROMPT_SECTION_PROMPT, PROMPT_SECTION_PROMPT_COLOR_KEY};
+use helpers::io::{get_value, read_config};
+
+#[derive(Debug, Clone)]
+pub struct ShellState {
+    pub prompt: String,
+    pub promt_color: String,
+}
+
+impl ShellState {
+    pub fn new() -> Self {
+        let config = read_config();
+        let prompt = get_value(&config, PROMPT_SECTION, PROMPT_SECTION_PROMPT);
+        let prompt_color = get_value(&config, PROMPT_SECTION, PROMPT_SECTION_PROMPT_COLOR_KEY);
+
+        Self {
+            prompt: prompt.unwrap_or("⇥ ").to_string(),
+            promt_color: prompt_color.unwrap_or("Black").to_string(),
+        }
+    }
+}

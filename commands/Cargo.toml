@@ -1,0 +1,10 @@
+[package]
+name = "commands"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+compiler = {path="../compiler"}
+helpers = {path="../helpers"}
+constants = {path="../constants"}
+crossterm = "0.29.0"

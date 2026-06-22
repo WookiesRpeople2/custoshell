@@ -1,0 +1,6 @@
+[workspace]
+resolver = "3"
+members = [
+    "core",
+    "compiler"
+, "errors", "commands", "helpers", "constants"]
