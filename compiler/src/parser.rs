@@ -93,6 +93,17 @@ impl Parser {
                     redirects.push(Redirect::Input { file });
                 }
 
+                Token::HomeSymbol => {
+                    self.advance();
+                    let home = std::env::var("HOME").expect("HOME not set");
+
+                    if program.is_empty() {
+                        program = home;
+                    } else {
+                        args.push(home);
+                    }
+                }
+
                 Token::Pipe | Token::EOF => {
                     break;
                 }

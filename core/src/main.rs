@@ -1,11 +1,13 @@
 mod executor;
 use commands::theme::color_from_name;
-use compiler::{lexer::Lexer, parser::Parser, state::ShellState};
+use compiler::{lexer::Lexer, parser::Parser, readline::read_line, state::ShellState};
 use constants::WELCOME_MESSAGE;
 use crossterm::style::Stylize;
 use errors::errors::{ShellErrorResault, ShellErrors};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter},
+    io::{AsyncWriteExt, BufWriter},
     task::JoinHandle,
 };
 
@@ -22,11 +24,8 @@ fn prompt_bytes(state: &ShellState) -> Vec<u8> {
 
 fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>> {
     tokio::spawn(async move {
-        let mut state = state;
-
-        let stdin = tokio::io::stdin();
+        let state = Arc::new(Mutex::new(state));
         let stdout = tokio::io::stdout();
-        let mut reader = BufReader::new(stdin).lines();
         let mut stdout = BufWriter::new(stdout);
 
         stdout
@@ -35,11 +34,22 @@ fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>>
         stdout.flush().await?;
 
         loop {
-            stdout.write(&prompt_bytes(&state)).await?;
-            stdout.flush().await?;
+            {
+                let state = state.lock().await;
+                stdout.write(&prompt_bytes(&state)).await?;
+                stdout.flush().await?;
+            }
 
-            let Some(line) = reader.next_line().await? else {
-                break;
+            let state_clone = Arc::clone(&state);
+            let line = tokio::task::spawn_blocking(move || {
+                let mut s = state_clone.blocking_lock();
+                read_line(&mut s)
+            })
+            .await?;
+
+            let line = match line {
+                Some(l) => l,
+                None => break,
             };
 
             let mut lexer = Lexer::new(line.clone());
@@ -47,7 +57,7 @@ fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>>
             let mut parser = Parser::new(tokens);
             let shell = parser.parse();
 
-            if execute(shell, &mut state).await.is_err() {
+            if execute(shell, &mut *state.lock().await).await.is_err() {
                 stdout
                     .write(format!("{}\n", ShellErrors::CommandNotFound(line.clone())).as_bytes())
                     .await?;

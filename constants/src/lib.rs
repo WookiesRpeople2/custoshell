@@ -35,3 +35,4 @@ pub const CONFIG_PATH: &str = "~/.config/scishell/config.toml";
 pub const PROMPT_SECTION: &str = "Prompt";
 pub const PROMPT_SECTION_PROMPT_COLOR_KEY: &str = "prompt_color";
 pub const PROMPT_SECTION_PROMPT: &str = "prompt";
+pub const ESC: char = '\x1b';

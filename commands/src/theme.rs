@@ -35,5 +35,5 @@ pub fn color_from_name(name: &str) -> CtColor {
         .iter()
         .find(|(n, _)| *n == name)
         .map(|(_, c)| *c)
-        .unwrap_or(CtColor::Black)
+        .unwrap_or(CtColor::White)
 }

@@ -1,12 +1,28 @@
+use std::{collections::HashMap, sync::LazyLock};
+
+use crate::tok;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Command(String),
     Pipe,
+    HomeSymbol,
     RedirectOut,
     RedirectAppend,
     RedirectIn,
     EOF,
 }
+
+type TokenEntry = (Token, Option<(char, Token)>);
+
+static TOKENMAP: LazyLock<HashMap<char, TokenEntry>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    map.insert('|', tok!(Token::Pipe));
+    map.insert('<', tok!(Token::RedirectIn));
+    map.insert('~', tok!(Token::HomeSymbol));
+    map.insert('>', tok!(Token::RedirectOut, '>' => Token::RedirectAppend));
+    map
+});
 
 pub struct Lexer {
     input: Vec<char>,
@@ -23,42 +39,29 @@ impl Lexer {
 
     pub fn tokenize(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
-
         while self.position < self.input.len() {
             self.skip_whitespace();
-
             match self.peek() {
-                Some('|') => {
-                    self.next();
-                    tokens.push(Token::Pipe);
-                }
-
-                Some('>') => {
-                    self.next();
-                    if self.peek() == Some('>') {
+                Some(c) => {
+                    if let Some((default_tok, lookahead)) = TOKENMAP.get(&c) {
                         self.next();
-                        tokens.push(Token::RedirectAppend);
+                        let token = match lookahead {
+                            Some((next_char, alt_tok)) if self.peek() == Some(*next_char) => {
+                                self.next();
+                                alt_tok.clone()
+                            }
+                            _ => default_tok.clone(),
+                        };
+                        tokens.push(token);
                     } else {
-                        tokens.push(Token::RedirectOut);
+                        let word = self.read_word();
+                        tokens.push(Token::Command(word));
                     }
                 }
-
-                Some('<') => {
-                    self.next();
-                    tokens.push(Token::RedirectIn);
-                }
-
-                Some(_) => {
-                    let word = self.read_word();
-                    tokens.push(Token::Command(word));
-                }
-
                 None => break,
             }
         }
-
         tokens.push(Token::EOF);
-
         tokens
     }
 

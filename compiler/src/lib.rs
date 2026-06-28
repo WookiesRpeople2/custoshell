@@ -1,6 +1,8 @@
 pub mod ast;
+pub mod history;
 pub mod lexer;
 pub mod parser;
+pub mod readline;
 pub mod state;
 
 #[macro_export]
@@ -55,5 +57,15 @@ macro_rules! define_builtins {
                 }
             }
         }
+    };
+}
+
+#[macro_export]
+macro_rules! tok {
+    ($token:expr) => {
+        ($token, None)
+    };
+    ($token:expr, $next:expr => $alt:expr) => {
+        ($token, Some(($next, $alt)))
     };
 }
