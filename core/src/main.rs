@@ -1,6 +1,6 @@
 mod executor;
 use commands::theme::color_from_name;
-use compiler::{lexer::Lexer, parser::Parser, readline::read_line, state::ShellState};
+use engine::{lexer::Lexer, parser::Parser, readline::read_line, state::ShellState};
 use constants::WELCOME_MESSAGE;
 use crossterm::style::Stylize;
 use errors::errors::{ShellErrorResault, ShellErrors};

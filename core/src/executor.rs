@@ -1,5 +1,5 @@
 use commands::execute_builtin;
-use compiler::{
+use engine::{
     ast::{CommandType, Shell},
     state::ShellState,
 };

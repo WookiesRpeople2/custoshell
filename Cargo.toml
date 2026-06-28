@@ -2,5 +2,5 @@
 resolver = "3"
 members = [
     "core",
-    "compiler"
+    "engine"
 , "errors", "commands", "helpers", "constants"]

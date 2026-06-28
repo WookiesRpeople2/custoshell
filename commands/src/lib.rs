@@ -1,5 +1,5 @@
 pub mod theme;
-use compiler::{ast::BuiltinCommand, state::ShellState};
+use engine::{ast::BuiltinCommand, state::ShellState};
 
 use crate::theme::color;
 

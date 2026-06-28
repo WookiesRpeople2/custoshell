@@ -7,13 +7,12 @@ edition = "2024"
 anyhow = "1.0.102"
 thiserror = "2.0.18"
 tokio = { version = "1.52.3", features = ["full"] }
-compiler = {path="../compiler"}
+engine = {path="../engine"}
 errors = {path="../errors"}
 commands = {path="../commands"}
 constants = {path="../constants"}
 helpers = {path="../helpers"}
 futures = "0.3.32"
 crossterm = "0.29.0"
-
 
 

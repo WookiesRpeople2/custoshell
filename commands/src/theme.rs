@@ -1,4 +1,4 @@
-use compiler::state::ShellState;
+use engine::state::ShellState;
 use constants::{COLORS, PROMPT_SECTION, PROMPT_SECTION_PROMPT_COLOR_KEY};
 use crossterm::style::Color as CtColor;
 use helpers::{
