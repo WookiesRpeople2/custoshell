@@ -1,8 +1,6 @@
 mod executor;
-use commands::theme::color_from_name;
 use engine::{lexer::Lexer, parser::Parser, readline::read_line, state::ShellState};
 use constants::WELCOME_MESSAGE;
-use crossterm::style::Stylize;
 use errors::errors::{ShellErrorResault, ShellErrors};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -12,15 +10,6 @@ use tokio::{
 };
 
 use crate::executor::execute;
-
-fn prompt_bytes(state: &ShellState) -> Vec<u8> {
-    state
-        .prompt
-        .clone()
-        .with(color_from_name(&state.promt_color))
-        .to_string()
-        .into_bytes()
-}
 
 fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>> {
     tokio::spawn(async move {
@@ -34,12 +23,6 @@ fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>>
         stdout.flush().await?;
 
         loop {
-            {
-                let state = state.lock().await;
-                stdout.write(&prompt_bytes(&state)).await?;
-                stdout.flush().await?;
-            }
-
             let state_clone = Arc::clone(&state);
             let line = tokio::task::spawn_blocking(move || {
                 let mut s = state_clone.blocking_lock();
@@ -57,11 +40,14 @@ fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>>
             let mut parser = Parser::new(tokens);
             let shell = parser.parse();
 
-            if execute(shell, &mut *state.lock().await).await.is_err() {
+            if execute(shell).await.is_err() {
                 stdout
                     .write(format!("{}\n", ShellErrors::CommandNotFound(line.clone())).as_bytes())
                     .await?;
+                stdout.flush().await?;
             }
+            stdout.write_all(b"\n").await?;
+            stdout.flush().await?;
         }
 
         Ok(())
