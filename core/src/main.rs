@@ -1,6 +1,6 @@
 mod executor;
-use engine::{lexer::Lexer, parser::Parser, readline::read_line, state::ShellState};
 use constants::WELCOME_MESSAGE;
+use engine::{lexer::Lexer, parser::Parser, readline::read_line, state::ShellState};
 use errors::errors::{ShellErrorResault, ShellErrors};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -24,8 +24,9 @@ fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>>
 
         loop {
             let state_clone = Arc::clone(&state);
+            let state_for_read = Arc::clone(&state_clone);
             let line = tokio::task::spawn_blocking(move || {
-                let mut s = state_clone.blocking_lock();
+                let mut s = state_for_read.blocking_lock();
                 read_line(&mut s)
             })
             .await?;
@@ -39,8 +40,8 @@ fn spawn_command_handler(state: ShellState) -> JoinHandle<ShellErrorResault<()>>
             let tokens = lexer.tokenize();
             let mut parser = Parser::new(tokens);
             let shell = parser.parse();
-
-            if execute(shell).await.is_err() {
+            let mut state = state_clone.lock().await;
+            if execute(shell, &mut *state).await.is_err() {
                 stdout
                     .write(format!("{}\n", ShellErrors::CommandNotFound(line.clone())).as_bytes())
                     .await?;
